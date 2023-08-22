@@ -1,0 +1,13 @@
+{
+  "type": "service_account",
+  "project_id": "fyi-zendesk-fetcher",
+  "private_key_id": "f655e139dc891d916c44982d74f2d3205d814a38",
+  "private_key": "-----BEGIN PRIVATE KEY-----\nMIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQC9I7TxpKpLGgjk\nktJPqlKNE1YfWMUdTmuKcbVO+BCJYpgMTFIsnSu64bed7wC104MsCiEiyZYB2cQJ\nrvWw0Uh2+SC3PVJ7HGC8mDv0Biqbrd+ubj5RJWguiIPMNZ9sLyDOGGqadLLer9IZ\nYSYlq43BC+tEzjONtHXhu4z6PrKRhz1UTpkXvW4ymkjZPh7aSQygdsPsEm4iypNg\nuYgLZZjOYC+Adk1/HM1vzOcr89noGSuRQ2wf3zPOM4DzZ+l7C23of+VX/XuF1xSV\ncu2mrAIr6f6n89McfWOTPDIqU7Oyb0l9v0Bi07xfmSfDklb6+FPuh757Tfwqh/wk\nqj1oZs8zAgMBAAECggEAJT5nvgGHyvwYbjH/GdLXKJJ7LfcD8Y5knMFhS2iLkRIK\nELnioIheeRFDX+UVRbidpslj1v7M/BZOhP2fwa6kT1ElQQ/hMv7WiayMebPRJhCp\n8CYjPUVZa3hUQ5z3hI0PL6YdL8b1BeanP3oi0d4jLrVTIZxdCHVVlRqiWxCHhyI7\nqzbZSvaZjMdvBEtCbQYFjI377bOcHZCHN2l8cTaQ7OinkKvTztromssdtEXdHy32\nzhu+qUNnZE43Fl9RCOdA/svvvhw2Zyu0b723N5ikTwXzllLbsr3HXJC9lEEPM6C9\nnGK+q7++GzPJmt7S6TYkErFIRvfyxfgN33XLTG0OCQKBgQD/0a7//1LlGHPcvipb\n5xX/ODOLMPXWjLYlSJHngEPD5Nx3pFDiUOwwq32UO5tpdxORBRFxCgA3OFILsHXz\nAjt6sRexK3DkE+cW6YOemYvtB+7Lx6gtgBC7f8Khw8ydxoZggHIS5i90Kt/zjFNp\noAROMMovax/c5HxNJb2Uj6+NPQKBgQC9RfNmg5lcdfUSOn5zscl8pK0kn0Tx3Lo2\n6IL19/+6ifyOtgLaRoQZLBqgVg9Kl1NyCdp7sLgxGboc6hsY4p5b4HtBuNHGGEBC\noxCEaEfHYpUftThOHeSSIRTJsM47nljjBBQqC5S2cVkn3S0T9ToFw6otrVOZknFA\n6JgjQgt1LwKBgQD8OlkKbUrlOSPbrOAE9yZ4Goivn5l0bg6VWiUJlSy7c+ZwTGG3\nksQeBKfvxImqBc8T+GRHCO5Hg89ZWSYicLwGb5+Ffuhy6LC7pYexk4EkNuMapwPJ\nwPA+fmx/pJcVpQ0PDvXqbmyxZCilcGE5zp0QHwjqkfu7hsiMJD70wGr9nQKBgAtb\nEwtngeAGQ7ngQI34cLpFtw2ncJ+COrnooVLYmkM63ChDy1AFQw+vkblk8G3tPlht\nNuqM48AuZvgtI4sOramdgkejKxLTiad12RvYldXkmEXavZISQRBzY6fmL7lr+rFE\nIWGUaEu56Tt3DalQ4TZPUvqCl61zF9BpJBeZcs6JAoGAHahB2axbb70bFmY9o0ex\nM1qwPlr92w6AKRwlySsJ68Bjgkk8N4U0Blpml5D568oKhYlDs3vFrnyrNOD9AjyO\nRjDCodc45dwDOj++o67dT/HLG7Oq/QDjHh4D8zFK0pkvLKxgw7DbGwjfmgZFNtUM\nF95NC/yi8U+Y2PFXjUdmF2Y=\n-----END PRIVATE KEY-----\n",
+  "client_email": "fyi-zendesk-account@fyi-zendesk-fetcher.iam.gserviceaccount.com",
+  "client_id": "105783634519880427192",
+  "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+  "token_uri": "https://oauth2.googleapis.com/token",
+  "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+  "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/fyi-zendesk-account%40fyi-zendesk-fetcher.iam.gserviceaccount.com",
+  "universe_domain": "googleapis.com"
+}
