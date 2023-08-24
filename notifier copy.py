@@ -268,7 +268,7 @@ def makeTicket(emailAddress="", credentials=list):
                 # test notif, change this to something relevant to the reset request
                 # set this to Don't Notify so Nadia and Intern account don't get an email
                 # standard subject should be "Encryption Key Reset Follow-up"
-                "subject": "Encryption Key Reset Follow-up",  
+                "subject": "Don't Notify",  
                 "requester": emailAddress,  
                 "recipient": emailAddress,
                 # add a flag to the ticket tags so when we pull all 
@@ -312,6 +312,8 @@ def extractSenderEmail(ticket_description):
         print('Something went wrong with extracting requester email')
         return None
     
+
+
 
 
 # gets recent Zendesk tickets and returns a list of encryption key reset requests that 
@@ -362,9 +364,9 @@ def getZendeskTickets(credentials=list):
                         # get email address of this ticket
                         current_email = extractSenderEmail(ticket_data['description'])
 
-                        print('extracted ', current_email)  # debugging
-
-                        # add this email to the list to respond to
+                        # make a ticket for this email
+                        makeTicket(emailAddress=current_email, credentials=credentials)
+                        print('pretending to send a ticket to', current_email)
                         emailsToRespondTo.append(current_email)
 
                         # add response flag to the current ticket
@@ -394,9 +396,10 @@ def getZendeskTickets(credentials=list):
 
                         # get email address of this ticket
                         current_email = extractSenderEmail(current_ticket['description'])
-                        print('extracted ', current_email)  # debugging
 
-                        # add this email to the list to respond to
+                        # make a ticket for this email
+                        makeTicket(emailAddress=current_email, credentials=credentials)
+                        print('pretending to send a ticket to', current_email)
                         emailsToRespondTo.append(current_email)
 
                         # add response flag to the current ticket
@@ -407,17 +410,16 @@ def getZendeskTickets(credentials=list):
                         # next check for the sentautomatedresponse tag
                         for tag in current_ticket['tags']:
 
-                            if dont_resond_tag != tag:
-                                # print('respond to ticket ', current_ticket['id'])   # debugging
+                            if dont_resond_tag == tag:
+                                print('Skip this ticket')   # debugging
+                            else:
+                                print('respond to ticket ', current_ticket['id'])   # debugging
 
                                 # add this email to the list to respond to
                                 emailsToRespondTo.append(current_email)
 
                                 # add the responpse flag so the this ticket does not get responded to more than once
                                 addAutomatedResponseFlag(ticket_id=current_ticket_id, credentials=credentials, printResponse=True)
-                                
-                                # no need to continue the loop, so break out
-                                break
 
     return emailsToRespondTo
 # runFunctions()
