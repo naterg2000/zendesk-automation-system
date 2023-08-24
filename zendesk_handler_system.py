@@ -3,13 +3,22 @@ import time
 
 def main():
 
+    # store login info
+    login_credentials = notifier.getLoginInfo()
+
+    
+
     # begin loop
     while True:
-        # pull recent tickets
-        notifier.getZendeskTickets()
-        # break up JSON response into list
 
-        # check for encryption key reset requests
+        # pull recent tickets
+        email_list = notifier.getZendeskTickets()
+
+        # print(len(email_list))
+
+        # debugging
+        # for email in email_list:
+        #     print(email)
 
         # make new tickets accordingly
 

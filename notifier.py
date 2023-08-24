@@ -10,19 +10,8 @@ subdomain = "https://fyihelp.zendesk.com"
 # use this phrase to look for the tag indicated a response email has already been sent
 dont_resond_tag = "sentautomatedresponse"
 
-# use this function to test functions
-def runFunctions():
-
-    # test GET method
-    # submitGET(endpoint=subdomain+'/api/v2/tickets/recent', credentials=getLoginInfo(), printResponse=True)
-
-    # test POST method
-    # submitPOST(endpoint=subdomain + "/api/v2/tickets", new_ticket_info=ticket_to_make, credentials=getLoginInfo(), printResponse=True)
-
-    # test makeTicket method
-    # makeTicket(emailAddress="naterg2000@gmail.com", credentials=getLoginInfo())
-
-    return None
+# don't email these users
+email_blacklist = ['sunil@fyi.fyi']
 
 
 # read login info from a file for extra security
@@ -41,6 +30,20 @@ def getLoginInfo():
         # split with commas and return the separated list
         return credentials.split(',')
 
+# print an HTTP response code and what it means
+# PARAM response: the HTTP response
+# RETURN response: returns the HTTP response object
+def printHTTPResponse(response, command):
+    print('Response: ', response.status_code)
+    if response.status_code >= 200 and response.status_code < 300:
+        print(command, ": posted with no problem")
+    elif response.status_code >= 300 and response.status_code < 400:
+        print(command, ": has multiple response choices, check logic")
+    elif response.status_code >= 400 and response.status_code < 500:
+        print(command, ": error with request, check syntax")
+    elif response.status_code >= 500 and response.status_code < 600:
+        print(command, ": there was an unexpected error with the server")
+    return response
 
 # submit a POST request to make a new ticket
 # PARAM endpoint: the API endpoint 
@@ -65,15 +68,47 @@ def submitPOST(endpoint="", new_ticket_info=dict, credentials=list, printRespons
     )
     # if printResponse is True, print 
     if printResponse:
-        print('Response: ', response.status_code)
-        if response.status_code >= 200 and response.status_code < 300:
-            print("POST posted with no problem")
-        elif response.status_code >= 300 and response.status_code < 400:
-            print("POST has multiple response choices, check logic")
-        elif response.status_code >= 400 and response.status_code < 500:
-            print("Error with POST request, check syntax")
-        elif response.status_code >= 500 and response.status_code < 600:
-            print("There was an unexpected error with the server (POST)")
+        printHTTPResponse(response, "POST")
+    return response
+
+
+# add the automated response tag to the specified ticket with PUT
+# PARAM ticket_id: a string with the ticket to add the flag to
+# PARAM credentials: a list containig the [0] login email and [1] the login password
+# PARAM printResponse: a bool; True will print the repsonse code of the request, False will bypass it
+# RETURN response: returns the response code from the PUT request
+def addAutomatedResponseFlag(ticket_id='', credentials=list, printResponse=False):
+
+    endpoint = ""
+
+    # check that a ticket ID was passed
+    if ticket_id != "":
+        endpoint = subdomain + "/api/v2/tickets/" + str(ticket_id)
+    else:
+        print("please enter ticket ID to add automated response flag to")
+        return None
+    
+    # a dict of the content to add to the ticket
+    update_tag_payload = {"ticket": {"tags": dont_resond_tag}}
+
+    # the content to send in the POST request
+    payload = json.loads(json.dumps(update_tag_payload))
+    # set header(s) for HTTP request
+    headers = {
+        "Content-Type": "application/json",
+    }
+
+    # make post request with payload
+    response = requests.request(
+        "PUT",
+        endpoint,
+        auth=(credentials[0], credentials[1]),
+        headers=headers,
+        json=payload
+    )
+    # if printResponse is True, print 
+    if printResponse:
+        printHTTPResponse(response, "PUT")
     return response
 
 
@@ -84,18 +119,10 @@ def submitPOST(endpoint="", new_ticket_info=dict, credentials=list, printRespons
 # RETURN response: returns the HTTP response object
 def submitGET(endpoint="", credentials=list, printResponse=False):
     # make api call
-    response = requests.get(endpoint, auth=("fyiintern001@gmail.com", "Chocolate2020"))
+    response = requests.get(endpoint, auth=(credentials[0], credentials[1]))
     # if printResponse is True, print 
     if printResponse:
-        print('Response: ', response.status_code)
-        if response.status_code >= 200 and response.status_code < 300:
-            print("GET posted with no problem")
-        elif response.status_code >= 300 and response.status_code < 400:
-            print("GET has multiple response choices, check logic")
-        elif response.status_code >= 400 and response.status_code < 500:
-            print("Error with GET request, check syntax")
-        elif response.status_code >= 500 and response.status_code < 600:
-            print("There was an unexpected error with the server (GET)")
+        printHTTPResponse(response, "GET")
     return response
 
 
@@ -104,6 +131,10 @@ def submitGET(endpoint="", credentials=list, printResponse=False):
 # PARAM credentials: a list containing the zendesk login info 
 # RETURN response: returns the HTTP response when attempting to make a new ticket, None if conditions were not satisfied
 def makeTicket(emailAddress="", credentials=list):
+
+    for email in email_blacklist:
+        if email == emailAddress:
+            return None
 
     endpoint = subdomain + "/api/v2/tickets"
 
@@ -174,52 +205,7 @@ def extractSenderEmail(ticket_description):
         return None
     
 
-# add the automated response tag to the specified ticket with PUT
-# PARAM ticket_id: a string with the ticket to add the flag to
-# PARAM credentials: a list containig the [0] login email and [1] the login password
-# PARAM printResponse: a bool; True will print the repsonse code of the request, False will bypass it
-# RETURN response: returns the response code from the PUT request
-def addAutomatedResponseFlag(ticket_id='', credentials=list, printResponse=False):
 
-    endpoint = ""
-
-    # check that a ticket ID was passed
-    if ticket_id != "":
-        endpoint = subdomain + "/api/v2/tickets/" + str(ticket_id)
-    else:
-        print("please enter ticket ID to add automated response flag to")
-        return None
-    
-    # a dict of the content to add to the ticket
-    update_tag_payload = {"ticket": {"tags": dont_resond_tag}}
-
-    # the content to send in the POST request
-    payload = json.loads(json.dumps(update_tag_payload))
-    # set header(s) for HTTP request
-    headers = {
-        "Content-Type": "application/json",
-    }
-
-    # make post request with payload
-    response = requests.request(
-        "PUT",
-        endpoint,
-        auth=(credentials[0], credentials[1]),
-        headers=headers,
-        json=payload
-    )
-    # if printResponse is True, print 
-    if printResponse:
-        print('Response: ', response.status_code)
-        if response.status_code >= 200 and response.status_code < 300:
-            print("PUT posted with no problem")
-        elif response.status_code >= 300 and response.status_code < 400:
-            print("PUT has multiple response choices, check logic")
-        elif response.status_code >= 400 and response.status_code < 500:
-            print("Error with PUT request, check syntax")
-        elif response.status_code >= 500 and response.status_code < 600:
-            print("There was an unexpected error with the server (PUT)")
-    return response
 
 
 # gets recent Zendesk tickets
@@ -255,8 +241,32 @@ def getZendeskTickets():
             # if len(data) is 1, ticket_data will be a list of the ticket's info
             print('Handling one ticket')
 
+            if search_for_subject == ticket_data['subject']:
+
+                    print('Handling ticket ID ', ticket_data[i]['id'])  # debugging
+                    print('Subject: ', ticket_data['subject'])   # debugging
+
+                    # if there are no tags in this ticket -> make ticket
+                    # no tags = no dont_respond_tag
+                    if len(ticket_data['tags']) == 0:
+
+                        current_ticket_id = ticket_data['id']
+
+                        # get email address of this ticket
+                        current_email = extractSenderEmail(ticket_data['description'])
+
+                        # make a ticket for this email
+                        # makeTicket(emailAddress=current_email, credentials=credentials)
+                        print('pretending to send a ticket to', current_email)
+                        emailsToRespondTo.append(current_email)
+
+                        # add response flag to the current ticket
+                        addAutomatedResponseFlag(ticket_id=current_ticket_id, credentials=credentials, printResponse=True)
+
+
         # handle multiple tickets with a loop
         else:
+            print('Handling multiple tickets')
 
             # if len(data) > 1, each index of ticket_data will hold a ticket's info as a sub-list
             # for each element in ticket_data
@@ -277,19 +287,17 @@ def getZendeskTickets():
                     if len(current_ticket['tags']) == 0:
 
                         current_ticket_id = current_ticket['id']
-                        print('no tags, can respond')
 
                         # get email address of this ticket
                         current_email = extractSenderEmail(current_ticket['description'])
-                        print('current email is ', current_email)
 
                         # make a ticket for this email
-                        makeTicket(emailAddress=current_email, credentials=credentials)
+                        # makeTicket(emailAddress=current_email, credentials=credentials)
                         print('pretending to send a ticket to', current_email)
+                        emailsToRespondTo.append(current_email)
 
                         # add response flag to the current ticket
                         addAutomatedResponseFlag(ticket_id=current_ticket_id, credentials=credentials, printResponse=True)
-                        print('added the flag to ticket ', current_ticket['id'])
 
                     else:
                         # if the ticket has the correct subject,
@@ -300,55 +308,13 @@ def getZendeskTickets():
                                 print('Skip this ticket')   # debugging
                             else:
                                 print('respond to ticket ', current_ticket['id'])   # debugging
+
+                                # add this email to the list to respond to
+                                emailsToRespondTo.append(current_email)
+
+                                # add the responpse flag so the this ticket does not get responded to more than once
+                                addAutomatedResponseFlag(ticket_id=current_ticket_id, credentials=credentials, printResponse=True)
                     print()
 
-
-    # look through each ticket subject for "Request reset encryption key"
-    search_for_subject = "Request reset encryption key"
-
-    # if there was only 1 recent ticket, handle it separately
-    # if len(data) == 1:
-
-    #     foundSentAutomatedResponse = False
-        
-    #     # look for sentautomatedresponse
-    #     for i in ticket_data['tags']:
-    #         if 'sentautomatedresponse' in i:
-    #             foundSentAutomatedResponse = True
-
-        # if sentautomatedresponse is not found, add this email to emailsToRespondTo
-    #     if  not foundSentAutomatedResponse:
-    #         emailsToRespondTo.append(extractSenderEmail(ticket_data['description']))
-
-    # otherwise handle all recent tickets
-    # else:
-    #     for i in range(0, len(ticket_data)):
-
-            # store each ticket temporarily
-    #         current_ticket = ticket_data[i]  
-
-    #         extractSenderEmail(current_ticket['description'])
-            
-            # if the ticket subject is subject_for_search
-    #         if search_for_subject in current_ticket['subject']:
-    #             tags = current_ticket['tags']
-    #             if len(tags) == 0:
-                    # send reset request response
-                    # since there are no labels, we know the automated repsonse
-                    # was not sent
-                    # makeTicket(emailAddress=extractSenderEmail(ticket_description=current_ticket['description']))
-    #                 pass
-    #             else:
-                    # look through the ticket's tags to find
-                    # sentautomatedresponse
-    #                 for tag in current_ticket['tags']:
-    #                     if "sentautomatedresponse" in tag:
-                            # print('Can skip ticket', current_ticket['id'])
-    #                         print()
-    #                     else:
-                            # print('send email response to', current_ticket['id'])
-    #                         print()
-        
-    # return emailsToRespondTo
-
+    return emailsToRespondTo
 # runFunctions()
