@@ -122,14 +122,6 @@ def submitGET(endpoint="", credentials=list, printResponse=False):
 
     # make api call
     response = requests.get(endpoint, auth=(credentials[0], credentials[1]))
-
-    if response.status_code >= 300 or response.status_code < 400:
-        notifyITTeam(function_origin="submitGET()", problem_description="300 error when trying to GET", credentials=credentials)
-    if response.status_code >= 400 or response.status_code < 500:
-        notifyITTeam(function_origin="submitGET()", problem_description="400 error when trying to GET", credentials=credentials)
-    elif response.status_code >= 500:
-        notifyITTeam(function_origin="submitGET()", problem_description="500 error when trying to GET", credentials=credentials)
-    
     # if printResponse is True, print 
     if printResponse:
         printHTTPResponse(response, "GET")
@@ -178,11 +170,11 @@ def submitPOST(endpoint="", new_ticket_info=dict, credentials=list, printRespons
         time.sleep(1)
 
         # if 3 attempts have been reached
-        if post_attempts == 2:
-            notifyITTeam(function_origin="submitPOST()", problem_description="could not POST this ticket:\n" + new_ticket_info, credentials=credentials)
+        # if post_attempts == 2:
+            # notifyITTeam(function_origin="submitPOST()", problem_description="could not POST ticket:\n", credentials=credentials)
 
             # put a flag to ignore the ticket in question
-            return None
+            # return None
         
         # if the code is less than 300, meaning it was not successful, try again
         # if 3 tries are exceeded
@@ -207,7 +199,7 @@ def addAutomatedResponseFlag(ticket_id='', credentials=list, printResponse=False
 
     # check that a ticket ID was passed
     if ticket_id != "":
-        endpoint = subdomain + "/api/v2/tickets/" + str(ticket_id)
+        endpoint = subdomain + "/api/v2/tickets/" + str(ticket_id)  # api command to get the ticket's ID
     else:
         print("please enter ticket ID to add automated response flag to")
         return None
@@ -248,7 +240,10 @@ def addAutomatedResponseFlag(ticket_id='', credentials=list, printResponse=False
             notifyITTeam(function_origin="addResponseFailedTag()", 
                          problem_description="Could not upload automated_response_flag to ticket " + ticket_id, 
                         credentials=credentials)
+            
+            # add the response failed tag to the ticket
             addResponseFailedFlag(ticket_id=ticket_id, credentials=credentials)
+
         # if the code is less than 300, meaning it was not successful, try again
         # if 3 tries are exceeded
         if response.status_code < 300:
@@ -314,6 +309,7 @@ def addResponseFailedFlag(ticket_id='', credentials=list, printResponse=False):
             notifyITTeam(function_origin="addResponseFailedTag()", 
                          problem_description="Could not upload response_failed_tag to ticket " + ticket_id, 
                         credentials=credentials)
+            
         # if the code is less than 300, meaning it was not successful, try again
         # if 3 tries are exceeded
         if response.status_code < 300:
@@ -327,11 +323,17 @@ def addResponseFailedFlag(ticket_id='', credentials=list, printResponse=False):
 
 
 
+
+
 # makes a new zendesk ticket as a response to the encryption key reset requester. this will also send an email to the requester
 # PARAM emailAddress: string of the email address for the new ticket
+# PARAM ticket_info: a list containing [0]: the email address to respond to and [1]: the ticket's ID for merging
 # PARAM credentials: a list containing the zendesk login info 
-# RETURN response: returns the HTTP response when attempting to make a new ticket, None if conditions were not satisfied
+# RETURN new_ticket_result: list of [HTTPResponseObject, newTicketID], None if conditions were not satisfied
 def makeTicket(emailAddress="", credentials=list):
+
+    # make a list with 2 elements
+    new_ticket_result = ['','']
 
     if emailAddress == "sunil@fyi.fyi":
         print("sunil's email, don't reply for now")
@@ -360,21 +362,45 @@ def makeTicket(emailAddress="", credentials=list):
 
                 # set this to Don't Notify so Nadia and Intern account don't get an email
                 # standard subject should be "Encryption Key Reset Follow-up"
-                "subject": "Encryption Key Reset Follow-up",  
+                "subject": "Don't Notify",  
                 "requester": emailAddress,  
                 "recipient": emailAddress,
             }
         }
 
-        print('sending an email to ', emailAddress) # debugging
+        # print('sending an email to ', ticket_info[0]) # debugging
 
+        # post new ticket to zendesk
         postAttempt = submitPOST(endpoint=endpoint, new_ticket_info=ticket_info, credentials=credentials, printResponse=True)
+        
+        
         if postAttempt == None:
             # add response failed tag
             print('adding response failed tag')
-
         else:
-            return postAttempt
+            # store HTTP result in [0]
+            new_ticket_result[0] = postAttempt
+
+            # if new ticket was successfully made, get status:new tickets
+            new_tickets_response = submitGET(endpoint=subdomain + '/api/v2/search.json?query=type:ticket+status:new', credentials=credentials, printResponse=False)
+            
+            # store the http response as a json
+            new_tickets_json = new_tickets_response.json()
+            
+            # break json up into a list
+            new_ticket_list = new_tickets_json[list(new_tickets_json.keys())[0]]
+            # find the new ticket with requester == emailAddress
+            for new_ticket in new_ticket_list:
+                # if the curent new ticket has the correct email address, store the ticket ID
+                if new_ticket['recipient'] == emailAddress:
+
+                    print('new ticket ID: ', new_ticket['id'])
+
+                    # store the correct ID in new_ticket_result[1]
+                    new_ticket_result[1] = new_ticket['id']
+                    
+            print('new_ticket_result:', new_ticket_result)
+            return new_ticket_result
 
     else:
         if emailAddress == "":
@@ -382,6 +408,9 @@ def makeTicket(emailAddress="", credentials=list):
         elif len(credentials) != 2:
             print('check credentials passed to makeTicket()')
         return None
+
+
+
 
 
 # takes in a ticket data list and extracts the sender email with a regular expression
@@ -407,8 +436,53 @@ def extractSenderEmail(ticket_description):
         return None
     
 
+
+
+
+# marge specified ticket info into passed ticket ID
+# PARAMS merge_ticket: ticket ID to grab comment from
+# PARAMS target_ticket: ticket ID to add the merge_ticket comment from
+# RETURN response: HTTP response from merging the tickets
+def mergeTicketIntoTarget(merge_ticket='', target_ticket='', credentials=list):
+
+    # print('merging ticket', merge_ticket, 'into', target_ticket)    # deubgging
+    endpoint = subdomain + '/api/v2/tickets/' + target_ticket + '/merge'
+
+    # grab ticket info from a ticket you'd like to add to another ticket
+    merge_ticket_info_response = submitGET(endpoint=subdomain + '/api/v2/tickets/' + merge_ticket, credentials=credentials)
+    merge_ticket_info_json = merge_ticket_info_response.json()
+
+    # break up JSON response into a list
+    merge_ticket_info = merge_ticket_info_json[list(merge_ticket_info_json.keys())[0]]
+
+    # check that the merge info response was correct
+    if merge_ticket_info_response.status_code > 299:
+        print('merge ticket responded with', merge_ticket_info_response.status_code)    # debugging
+    else:
+        print('grabbed ticket', merge_ticket_info['id'])    # debugging
+
+    # dictionary version of ticket body to merge into target_ticket
+    merge_body = {
+        "ids": [ merge_ticket ],
+        "target_comment": "Request info from Ticket " + str(merge_ticket_info['id']) + "\n\n" + merge_ticket_info['description'],
+    }
+
+    # store the merge response
+    merge_response = submitPOST(endpoint=endpoint, new_ticket_info=merge_body, credentials=credentials, printResponse=True)
+
+    # check that the response from the merge was witihin the 200 range
+    if merge_response.status_code > 299 or merge_response == None:
+        print('Something went wrong with the merge')
+    else:
+        print('Merging ticket', merge_ticket_info['id'], 'was successful')
+
+    return merge_response
+
+
+
 # pull all tickets that are NOT solved
 # PARAM credentials: list of login info for zendesk account
+# RETURN ticket_data: list of tickets that are not solved
 def getAllNotSolvedTickets(credentials=list, printResponse=False):
     # endpoint = subdomain + '/api/v2/search.json?query=type:ticket+status:pending+status:new+status:open'   # solved is the "largest" value of status, so anything less than solved is not-solved
     endpoint = subdomain + '/api/v2/search.json?query=type:ticket+status:open+status:pending+status:new' 
@@ -430,7 +504,7 @@ def getAllNotSolvedTickets(credentials=list, printResponse=False):
 # put together a list of address to make new tickets for emails we need to respond to come from help@fyi.fyi forwarded emails 
 # with subject "Request reset encryption key". The ticket must also not have the tag "sentautomateresponse"
 # PARAM ticket_list: a list of ticket data 
-# RETURN email_list: a list of emails from tickets that have the correct subject and do not have the don't send flag
+# RETURN response_list: a list of emails and ticket IDs from tickets that have the correct subject and do not have the don't send flag
 def compileEmailList(ticket_list):
 
     # search for this subject when adding tickets to the email list
@@ -440,16 +514,14 @@ def compileEmailList(ticket_list):
     dont_respond_flag = "sentautomatedresponse"
 
     # the list of emails to return
-    email_list = list()
+    response_list = list()
 
     # if there were no emails passed, just return an empty list
     if len(ticket_list) == 0:
-        return email_list
+        return response_list
 
     # look through each ticket in the list of tickets passed
     for ticket in ticket_list:
-
-        print('current subject:', ticket['subject'])
         
         # check for the correct subject for each ticket from the pulled list
         if ticket['subject'] == search_subject:
@@ -460,12 +532,12 @@ def compileEmailList(ticket_list):
             # look through the tags of the current ticket. If the don't respond tag is in
             # the tags of this ticket, set the add flag to false
             for tag in ticket['tags']:
-                if dont_respond_flag in tag:
+                if dont_respond_flag in tag or response_failed_tag in tag:
                     addEmailToList = False
             
             # if the add flag remained true, add this email to the response list
             if addEmailToList:
                 # extract the email from this ticket's descriptoin and add it to the response list
-                email_list.append(extractSenderEmail(ticket_description=ticket['description']))
+                response_list.append([extractSenderEmail(ticket_description=ticket['description']), ticket['id']])
 
-    return email_list
+    return response_list
