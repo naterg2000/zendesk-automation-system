@@ -24,6 +24,9 @@ class MainWindow(QMainWindow):
         
 
     def initUI(self):
+
+        # set colors of window
+        self.setStyleSheet("background-color: #232426")
         
         # text input
         self.input_bar = QtWidgets.QLineEdit(self)
