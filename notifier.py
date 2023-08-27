@@ -6,6 +6,9 @@ import re
 import json
 import time
 
+# debug flag to enable/disable printing, Don't Notify subject for new tickets, etc...
+debug_mode = False
+
 # zendesk FYI subdomain
 subdomain = "https://fyihelp.zendesk.com"
 
@@ -362,17 +365,31 @@ def makeTicket(emailAddress="", credentials=list):
 
                 # set this to Don't Notify so Nadia and Intern account don't get an email
                 # standard subject should be "Encryption Key Reset Follow-up"
-                "subject": "Don't Notify",  
+                "subject": "Encryption Key Reset Follow-up",  # inline if: expression_if_true if condition else expression_if_false
                 "requester": emailAddress,  
                 "recipient": emailAddress,
             }
         }
 
-        # print('sending an email to ', ticket_info[0]) # debugging
-
         # post new ticket to zendesk
-        postAttempt = submitPOST(endpoint=endpoint, new_ticket_info=ticket_info, credentials=credentials, printResponse=True)
+        post_attempt = submitPOST(endpoint=endpoint, new_ticket_info=ticket_info, credentials=credentials, printResponse=True)
         
+        # give time for Zendesk Ticket list to update so we don't get an error when looking for a new ticket 
+        time.sleep(5)
+
+
+        # store the new ticket attempt HTTP response as JSON
+        post_attempt_data = post_attempt.json()
+
+        # split the JSON into a list
+        new_ticket_data = post_attempt_data[list(post_attempt_data.keys())[0]]
+
+        # store return list as [HTTP response from making the new ticket, new ticket ID]
+        new_ticket_result = [post_attempt, new_ticket_data['id']]
+
+        return new_ticket_result
+        
+
 
     else:
         if emailAddress == "":
@@ -410,47 +427,44 @@ def extractSenderEmail(ticket_description):
 
 
 
-#
-#
-#   WORKING ON THIS STILL, NOT USED ANYWHERE
-#
-#
+
 # marge specified ticket info into passed ticket ID
-# PARAMS merge_ticket: ticket ID to grab comment from
-# PARAMS target_ticket: ticket ID to add the merge_ticket comment from
+# PARAMS original_request_ticket_id: ticket ID to grab comment from
+# PARAMS target_ticket_id: ticket ID to add the merge_ticket comment from
 # RETURN response: HTTP response from merging the tickets
-def mergeTicketIntoTarget(merge_ticket='', target_ticket='', credentials=list):
+def mergeTicketIntoTarget(original_request_ticket_id='', target_ticket_id='', credentials=list):
 
     # print('merging ticket', merge_ticket, 'into', target_ticket)    # deubgging
-    endpoint = subdomain + '/api/v2/tickets/' + target_ticket + '/merge'
+    endpoint = subdomain + '/api/v2/tickets/' + str(target_ticket_id) + '/merge'
 
     # grab ticket info from a ticket you'd like to add to another ticket
-    merge_ticket_info_response = submitGET(endpoint=subdomain + '/api/v2/tickets/' + merge_ticket, credentials=credentials)
-    merge_ticket_info_json = merge_ticket_info_response.json()
-
-    # break up JSON response into a list
-    merge_ticket_info = merge_ticket_info_json[list(merge_ticket_info_json.keys())[0]]
+    original_ticket_info_response = submitGET(endpoint=subdomain + '/api/v2/tickets/' + str(original_request_ticket_id), credentials=credentials)
 
     # check that the merge info response was correct
-    if merge_ticket_info_response.status_code > 299:
-        print('merge ticket responded with', merge_ticket_info_response.status_code)    # debugging
-    else:
-        print('grabbed ticket', merge_ticket_info['id'])    # debugging
+    if original_ticket_info_response.status_code > 299:
+        print('mergeTicketIntoTarget(): grabbing old ticket info responded > 299', original_ticket_info_response.status_code)    # debugging
+        return None
+
+    # split response object into JSON
+    original_ticket_info_json = original_ticket_info_response.json()
+
+    # break up JSON response into a list
+    original_ticket_info = original_ticket_info_json[list(original_ticket_info_json.keys())[0]]
 
     # dictionary version of ticket body to merge into target_ticket
     merge_body = {
-        "ids": [ merge_ticket ],
-        "target_comment": "Request info from Ticket " + str(merge_ticket_info['id']) + "\n\n" + merge_ticket_info['description'],
+        "ids": [ original_request_ticket_id ],
+        "target_comment": "Request info from Ticket " + str(original_ticket_info['id']) + "\n\n" + original_ticket_info['description'],
     }
 
-    # store the merge response
+    # execute ticket merge and store the merge response
     merge_response = submitPOST(endpoint=endpoint, new_ticket_info=merge_body, credentials=credentials, printResponse=True)
 
     # check that the response from the merge was witihin the 200 range
     if merge_response.status_code > 299 or merge_response == None:
         print('Something went wrong with the merge')
     else:
-        print('Merging ticket', merge_ticket_info['id'], 'was successful')
+        print('Merging ticket', original_ticket_info['id'], 'with', target_ticket_id, 'was successful')
 
     return merge_response
 

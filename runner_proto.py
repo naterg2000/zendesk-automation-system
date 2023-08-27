@@ -6,9 +6,10 @@ import time
 # store login info
 login_credentials = notifier.getLoginInfo()
 
-# notifier.notifyITTeam(function_origin="420", problem_description="test report", credentials=login_credentials)
+    
 
 def testFunctions():
+    # newTicketID = notifier.makeTicket(emailAddress="naterg2000@gmail.com", credentials=login_credentials)[1]
 
     return None
 
@@ -31,8 +32,9 @@ def main():
         for i in range(0, len(response_list)):
             print('respond to:', response_list[i][0], 'ticket:', response_list[i][1])  # debugging
             make_ticket_response = notifier.makeTicket(emailAddress=response_list[i][0], credentials=login_credentials)
+
+            print('make ticket response contians: ', make_ticket_response)
             
-            make_ticket_response = 1 # debugging, delete me
             if make_ticket_response == None:
                 print('could not make ticket -- add response failed tag')
                 notifier.addResponseFailedFlag(ticket_id=response_list[i][1], credentials=login_credentials, printResponse=True)
@@ -44,6 +46,9 @@ def main():
 
                 print('adding response succesful flag')
                 notifier.addAutomatedResponseFlag(ticket_id=response_list[i][1], credentials=login_credentials, printResponse=True)
+
+                print('merging original request from ticket', response_list[i][1], 'into ticket', make_ticket_response[1])
+                notifier.mergeTicketIntoTarget(response_list[i][1], target_ticket_id=make_ticket_response[1], credentials=login_credentials)
 
 
 
