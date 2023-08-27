@@ -1,23 +1,48 @@
+# this is a test version of the runner code
+
 import notifier
 import time
 
+# store login info
+login_credentials = notifier.getLoginInfo()
+
+# notifier.notifyITTeam(function_origin="420", problem_description="test report", credentials=login_credentials)
+
+def testFunctions():
+
+    return None
+
+
 def main():
 
-    # store login info
-    login_credentials = notifier.getLoginInfo()
-
-    # begin loop
     while True:
-        # pull recent tickets
-        email_list = notifier.getZendeskTickets(login_credentials)
 
-        print('email list has', len(email_list), 'emails')
+        # pull all tickets that are not Solved
+        ticket_list = notifier.getAllNotSolvedTickets(credentials=login_credentials, printResponse=False)
 
-        # make new tickets accordingly
+        # put together the email list
+        response_list = notifier.compileEmailList(ticket_list=ticket_list)
+        print('email_list contains', response_list)
 
-        # update Benzo Log Google Sheet
-        print('Waiting 2 seconds')
-        time.sleep(2)
-        
+        time.sleep(5)
 
-main()
+        for i in range(0, len(response_list)):
+            # print('respond to:', response_list[i][0], 'ticket:', response_list[i][1])  # debugging
+            make_ticket_response = notifier.makeTicket(emailAddress=response_list[i][0], credentials=login_credentials)
+            
+            if make_ticket_response == None:
+                print('could not make ticket -- add response failed tag')
+                notifier.addResponseFailedFlag(ticket_id=response_list[i][1], credentials=login_credentials, printResponse=False)
+
+                # print('Notify IT team')
+                # notifier.notifyITTeam(params here)    # still working on this
+            else:
+                print('successfully responded to', response_list[i][0])
+                notifier.addAutomatedResponseFlag(ticket_id=response_list[i][1], credentials=login_credentials, printResponse=False)
+
+
+
+# testFunctions()
+
+while True:
+    main()

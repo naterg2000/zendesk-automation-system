@@ -10,7 +10,7 @@ import time
 subdomain = "https://fyihelp.zendesk.com"
 
 # use this phrase to look for the tag indicated a response email has already been sent
-dont_resond_tag = "sent_automated_response"
+dont_resond_tag = "response_successful"
 
 # use this phrase to indicate a request ticket that was not able to be automatically responded to
 response_failed_tag = "response_failed"
@@ -32,7 +32,7 @@ def getLoginInfo():
     except:
         
         # email support team to address the login credentials issue
-        notifyITTeam(function_origin="getLoginInfo()", problem_description="There was an issue reading the login info file", credentials=["fyiintern001@gmail.com", "Chocolate2020"])
+        # notifyITTeam(function_origin="getLoginInfo()", problem_description="There was an issue reading the login info file", credentials=["fyiintern001@gmail.com", "Chocolate2020"])
 
         # stop the program since nothing will work if login info is different
         exit()
@@ -237,9 +237,9 @@ def addAutomatedResponseFlag(ticket_id='', credentials=list, printResponse=False
         # if 3 attempts have been reached
         if put_attempts == 2:
             print('Notify IT team to check what\'s up with this email and submit a manual ticket')
-            notifyITTeam(function_origin="addResponseFailedTag()", 
-                         problem_description="Could not upload automated_response_flag to ticket " + ticket_id, 
-                        credentials=credentials)
+            # notifyITTeam(function_origin="addResponseFailedTag()", 
+            #              problem_description="Could not upload automated_response_flag to ticket " + ticket_id, 
+            #             credentials=credentials)
             
             # add the response failed tag to the ticket
             addResponseFailedFlag(ticket_id=ticket_id, credentials=credentials)
@@ -306,9 +306,9 @@ def addResponseFailedFlag(ticket_id='', credentials=list, printResponse=False):
         # if 3 attempts have been reached
         if put_attempts == 2:
             print('Notify IT team to check what\'s up with this email and submit a manual ticket')
-            notifyITTeam(function_origin="addResponseFailedTag()", 
-                         problem_description="Could not upload response_failed_tag to ticket " + ticket_id, 
-                        credentials=credentials)
+            # notifyITTeam(function_origin="addResponseFailedTag()", 
+            #              problem_description="Could not upload response_failed_tag to ticket " + ticket_id, 
+            #            credentials=credentials)
             
         # if the code is less than 300, meaning it was not successful, try again
         # if 3 tries are exceeded
@@ -334,17 +334,18 @@ def makeTicket(emailAddress="", credentials=list):
 
     # make a list with 2 elements
     new_ticket_result = ['','']
-
+    
+    # for now, don't email sunil
     if emailAddress == "sunil@fyi.fyi":
         print("sunil's email, don't reply for now")
         return None
 
+    # set API endpoint
     endpoint = subdomain + "/api/v2/tickets"
 
     # first, check if there was an email address passed and
     # credentials length is 2
     if emailAddress != "" and len(credentials) == 2:
-        # continue with making the ticket
 
         # set ticket info
         ticket_info = {
@@ -356,8 +357,7 @@ def makeTicket(emailAddress="", credentials=list):
                         We will follow up with you as soon as we can in this Email thread.\n\nThank you for your patience. We will get you back into FYI soon!"
                 },
 
-                # priority of the ticket is urgent since 
-                # we want to get users back up and running quickly
+                # priority of the ticket is urgent since we want to get users back up and running quickly
                 "priority": "urgent",
 
                 # set this to Don't Notify so Nadia and Intern account don't get an email
@@ -373,34 +373,6 @@ def makeTicket(emailAddress="", credentials=list):
         # post new ticket to zendesk
         postAttempt = submitPOST(endpoint=endpoint, new_ticket_info=ticket_info, credentials=credentials, printResponse=True)
         
-        
-        if postAttempt == None:
-            # add response failed tag
-            print('adding response failed tag')
-        else:
-            # store HTTP result in [0]
-            new_ticket_result[0] = postAttempt
-
-            # if new ticket was successfully made, get status:new tickets
-            new_tickets_response = submitGET(endpoint=subdomain + '/api/v2/search.json?query=type:ticket+status:new', credentials=credentials, printResponse=False)
-            
-            # store the http response as a json
-            new_tickets_json = new_tickets_response.json()
-            
-            # break json up into a list
-            new_ticket_list = new_tickets_json[list(new_tickets_json.keys())[0]]
-            # find the new ticket with requester == emailAddress
-            for new_ticket in new_ticket_list:
-                # if the curent new ticket has the correct email address, store the ticket ID
-                if new_ticket['recipient'] == emailAddress:
-
-                    print('new ticket ID: ', new_ticket['id'])
-
-                    # store the correct ID in new_ticket_result[1]
-                    new_ticket_result[1] = new_ticket['id']
-                    
-            print('new_ticket_result:', new_ticket_result)
-            return new_ticket_result
 
     else:
         if emailAddress == "":
@@ -438,7 +410,11 @@ def extractSenderEmail(ticket_description):
 
 
 
-
+#
+#
+#   WORKING ON THIS STILL, NOT USED ANYWHERE
+#
+#
 # marge specified ticket info into passed ticket ID
 # PARAMS merge_ticket: ticket ID to grab comment from
 # PARAMS target_ticket: ticket ID to add the merge_ticket comment from
@@ -485,7 +461,7 @@ def mergeTicketIntoTarget(merge_ticket='', target_ticket='', credentials=list):
 # RETURN ticket_data: list of tickets that are not solved
 def getAllNotSolvedTickets(credentials=list, printResponse=False):
     # endpoint = subdomain + '/api/v2/search.json?query=type:ticket+status:pending+status:new+status:open'   # solved is the "largest" value of status, so anything less than solved is not-solved
-    endpoint = subdomain + '/api/v2/search.json?query=type:ticket+status:open+status:pending+status:new' 
+    endpoint = subdomain + '/api/v2/search.json?query=type:ticket+status:open+status:pending+status:new'    
     
     # submit GET request for all not solved tickets
     response = submitGET(endpoint=endpoint, credentials=getLoginInfo(), printResponse=printResponse)
@@ -510,9 +486,6 @@ def compileEmailList(ticket_list):
     # search for this subject when adding tickets to the email list
     search_subject = "Request reset encryption key"
 
-    # look for this flag to avoid sending multiple responses to the same user
-    dont_respond_flag = "sentautomatedresponse"
-
     # the list of emails to return
     response_list = list()
 
@@ -532,7 +505,7 @@ def compileEmailList(ticket_list):
             # look through the tags of the current ticket. If the don't respond tag is in
             # the tags of this ticket, set the add flag to false
             for tag in ticket['tags']:
-                if dont_respond_flag in tag or response_failed_tag in tag:
+                if dont_resond_tag in tag or response_failed_tag in tag:
                     addEmailToList = False
             
             # if the add flag remained true, add this email to the response list

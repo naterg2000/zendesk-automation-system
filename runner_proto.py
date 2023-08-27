@@ -15,30 +15,39 @@ def testFunctions():
 
 def main():
 
-    # pull all tickets that are not Solved
-    ticket_list = notifier.getAllNotSolvedTickets(credentials=login_credentials, printResponse=True)
+    while True:
 
-    # put together the email list
-    response_list = notifier.compileEmailList(ticket_list=ticket_list)
-    print('email_list contains', response_list)
+        print('grabbing non-solved tickets')
 
-    time.sleep(5)
+        # pull all tickets that are not Solved
+        ticket_list = notifier.getAllNotSolvedTickets(credentials=login_credentials, printResponse=False)
 
-    for i in range(0, len(response_list)):
-        print('respond to:', response_list[i][0], 'ticket:', response_list[i][1])  # debugging
-        notifier.makeTicket(emailAddress=response_list[i][0], credentials=login_credentials)
-        
-        # check response from makeTicket()
-        # if the response from making the ticket < 200, the ticket was made successfully add automated response tag
-        # if notifier.makeTicket(emailAddress=response_list[i], credentials=login_credentials)[0].status_code < 300:
-        #     print('new ticket successfuly made for', response_list[0])
-        # otherwise, add failed response tag and notify IT team
-        # else:
-        #     print('add response failed tag')
-            # add failed response tag
-            # notify IT team
+        # put together the email list
+        response_list = notifier.compileEmailList(ticket_list=ticket_list)
+        print('email_list contains', response_list)
+
+        time.sleep(5)
+
+        for i in range(0, len(response_list)):
+            print('respond to:', response_list[i][0], 'ticket:', response_list[i][1])  # debugging
+            make_ticket_response = notifier.makeTicket(emailAddress=response_list[i][0], credentials=login_credentials)
+            
+            make_ticket_response = 1 # debugging, delete me
+            if make_ticket_response == None:
+                print('could not make ticket -- add response failed tag')
+                notifier.addResponseFailedFlag(ticket_id=response_list[i][1], credentials=login_credentials, printResponse=True)
+
+                print('Notify IT team')
+                # notifier.notifyITTeam(params here)
+            else:
+                print('successfully responded to', response_list[i][0])
+
+                print('adding response succesful flag')
+                notifier.addAutomatedResponseFlag(ticket_id=response_list[i][1], credentials=login_credentials, printResponse=True)
 
 
 
-testFunctions()
-main()
+# testFunctions()
+
+while True:
+    main()
