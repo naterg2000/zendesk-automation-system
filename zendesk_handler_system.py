@@ -1,4 +1,5 @@
 import notifier
+import system_ui
 import time
 
 # store login info
@@ -38,5 +39,5 @@ def main():
                 notifier.mergeTicketIntoTarget(response_list[i][1], target_ticket_id=make_ticket_response[1], credentials=login_credentials)
 
 
-while True:
-    main()
+# while True:
+    # main()
