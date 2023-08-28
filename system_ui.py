@@ -31,31 +31,53 @@ class MainWindow(QMainWindow):
         # text input
         self.input_bar = QtWidgets.QLineEdit(self)
         self.input_bar.setGeometry(150, 250, 100, 40)
+        self.input_bar.setText("")
 
         # set up a button
         self.button1 = QtWidgets.QPushButton("Show", self)
-        self.button1.setGeometry(200, 200, 200, 50)
-        self.button1.setStyleSheet("color: black")
-        self.button1.setStyleSheet("font-weight: bold")
-        self.button1.setStyleSheet("font-size: 18pt")
+        self.button1.setGeometry(100, 100, 100, 50)
+        self.button1.setStyleSheet("color: white; font-size: 14pt")
         self.button1.clicked.connect(self.button1_clicked)
 
         # label setup
         self.label = QtWidgets.QLabel(self)
-        self.label.setText("Change the title of the window by clicking the button")
-        self.label.setGeometry(0, 0, 100, 30)
-        self.label.setStyleSheet("font-weight: bold")
-        self.label.setStyleSheet("font-size: 18pt")
+        self.label.setText("Zendesk Automation System")
+        self.label.setGeometry(0, 0, 400, 30)
+        self.label.setStyleSheet("color: #959597; font-weight: bold; font-size: 18pt")
         self.label.update()
+
+        # update frequency label
+        self.update_frequency_title_label = QtWidgets.QLabel(self)
+        self.update_frequency_title_label.setText("Update frequency (sec):")
+        self.update_frequency_title_label.setGeometry(0, 100, 400, 30)
+        self.update_frequency_title_label.setStyleSheet("color: #959597; font-weight: bold; font-size: 18pt")
+        self.update_frequency_title_label.update()
+
+        # update frequnecy value label
+        self.update_frequency_value_label = QtWidgets.QLabel(self)
+        self.update_frequency_value_label.setText("5")
+        self.update_frequency_value_label.setGeometry(300, 100, 400, 30)
+        self.update_frequency_value_label.setStyleSheet("color: #959597; font-weight: bold; font-size: 18pt")
+        self.update_frequency_value_label.update()
 
 
     def button1_clicked(self):
 
-        url_value = self.input_bar.text()
-        self.label.setText(url_value)
-        self.label.setGeometry(QtCore.QRect(200, 80, 500, 100))
+        # get value from input bar
+        new_frequency_value = self.input_bar.text()
 
-        print("Chagned label text :D")
+        try:
+            # convert the entered frequency to an int
+            new_frequency_value = int(new_frequency_value)
+            print('type of new freqyency value is now ', type(new_frequency_value))
+        except Exception as e:
+            print(str(e))
+        
+        # update frequency wait time 
+        
+        
+
+        
 
 app = QApplication(sys.argv)
 
