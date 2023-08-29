@@ -1,4 +1,6 @@
-# run this to get a csv of updated zendesk ticket data
+"""
+This script grabs Benzo Log report data and adds it to our Google Sheet
+"""
 
 # continue with this video: https://www.youtube.com/watch?v=3wC-SCdJK2c
 
@@ -126,7 +128,12 @@ extracted_ticket_data_titles = ["assignee id", "created at", "description", "id"
 ticket_data = data[list(data.keys())[0]]  # store desired data from json response
 num_tickets = 1
 # print(ticket_data['description'])
-getTicketDescription(ticket_data['description'])
+
+"""
+This needs to be uncommented, I just don't know what I renamed it to lol
+
+"""
+# getTicketDescription(ticket_data['description'])  
 
 info_to_extract = ["created_at", "description", "status"]
 # print only specific data via loop
