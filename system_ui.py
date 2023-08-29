@@ -3,13 +3,15 @@ from PyQt5 import QtWidgets
 from PyQt5.QtGui import * 
 from PyQt5.QtWidgets import *
 from PyQt5.QtCore import *
-
-import sys
-
 from PyQt5.QtWidgets import QWidget
 
+import sys
+import threading
+import subprocess
+from runner_proto import ZendeskAutomationSystem as zds
 
 class MainWindow(QMainWindow):
+
     def __init__(self, *args, **kwargs):
         super(MainWindow, self).__init__(*args, **kwargs)
 
@@ -41,7 +43,7 @@ class MainWindow(QMainWindow):
                                                 font-weight: bold;")
         
         # update frequency value label
-        self.update_frequency_value_label = QtWidgets.QLabel("This will be set")
+        self.update_frequency_value_label = QtWidgets.QLabel(str(zds.update_frequency))
         self.update_frequency_value_label.setStyleSheet("color: #959597; \
                                                 font-size: 14pt; \
                                                 font-weight: bold;")
@@ -52,9 +54,8 @@ class MainWindow(QMainWindow):
         frequency_handling_layout.addWidget(self.update_frequency_value_label)
 
         # update frequency change text input
-        self.update_frequency_input = QtWidgets.QLineEdit(self)
-        self.update_frequency_input.setStyleSheet("height: 30px; \
-                                                  text-color: #959597")
+        self.update_frequency_input = QtWidgets.QLineEdit("")
+        self.update_frequency_input.setStyleSheet("height: 30px;")
         # self.update_frequency_input.setGeometry()
         
         # update frequency change button
@@ -70,7 +71,7 @@ class MainWindow(QMainWindow):
         self.status_label = QtWidgets.QLabel("Status:")
         self.status_label.setStyleSheet("color: #959597; \
                                        font-size: 12pt;")
-        self.status_description_label = QtWidgets.QLabel("What the system is up to")
+        self.status_description_label = QtWidgets.QLabel("")
         self.status_description_label.setStyleSheet("color: #959597; \
                                        font-size: 10pt;")
 
@@ -95,28 +96,25 @@ class MainWindow(QMainWindow):
 
 
     def submit_update_frequency_change_button_clicked(self):
-        url_value = ""
+        freq_value = ""
         try:
-            url_value = self.update_frequency_input.text()
+            freq_value = self.update_frequency_input.text()
         except Exception as e: 
             print("\nProblelm at submit_update_frequency_button_clicked(): ", e)
 
         
-        if url_value == "": # if the text bar is empty, print a warning
+        if freq_value == "": # if the text bar is empty, print a warning
             print("Please enter a value to change the update frequency to")
         else:   # otherwise, update the label, reset the input bar text, and change the update frequency value
-            self.update_frequency_value_label.setText(url_value)
+            self.update_frequency_value_label.setText(freq_value)
             self.update_frequency_input.setText("")
-            print("Chagned label text :D")
+            zds.update_frequency = int(freq_value)
+            print("Update fequency is now:", zds.update_frequency)
 
-        
+the_other_process = subprocess.Popen(['python', 'runner_proto.py'])
 
 app = QApplication(sys.argv)
-
 window = MainWindow()
 window.show()
+app.exec_()
 
-def startUI():
-    app.exec_()
-
-startUI()

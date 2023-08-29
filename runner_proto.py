@@ -1,58 +1,60 @@
 # this is a test version of the runner code
 
+# currently adding UI to this 
+
 import notifier
 import time
-
-# store login info
-login_credentials = notifier.getLoginInfo()
-
-    
-
-def testFunctions():
-    # newTicketID = notifier.makeTicket(emailAddress="naterg2000@gmail.com", credentials=login_credentials)[1]
-
-    return None
+import os
+from sys import platform
 
 
-def main():
+class ZendeskAutomationSystem():  
 
-    while True:
+    login_credentials = notifier.getLoginInfo() # store login info
+    update_frequency = 5    # the time between each API request
+    system_status = "Hello there"  
 
-        print('grabbing non-solved tickets')
+    def main():
 
-        # pull all tickets that are not Solved
-        ticket_list = notifier.getAllNotSolvedTickets(credentials=login_credentials, printResponse=False)
+        while True: # continually run
 
-        # put together the email list
-        response_list = notifier.compileEmailList(ticket_list=ticket_list)
-        print('email_list contains', response_list)
-
-        time.sleep(5)
-
-        for i in range(0, len(response_list)):
-            print('respond to:', response_list[i][0], 'ticket:', response_list[i][1])  # debugging
-            make_ticket_response = notifier.makeTicket(emailAddress=response_list[i][0], credentials=login_credentials)
-
-            print('make ticket response contians: ', make_ticket_response)
-            
-            if make_ticket_response == None:
-                print('could not make ticket -- add response failed tag')
-                notifier.addResponseFailedFlag(ticket_id=response_list[i][1], credentials=login_credentials, printResponse=True)
-
-                print('Notify IT team')
-                # notifier.notifyITTeam(params here)
+            # clear the command line with every loop execution
+            if platform == "win32":
+                os.system('cls')
             else:
-                print('successfully responded to', response_list[i][0])
+                os.system('clear')
 
-                print('adding response succesful flag')
-                notifier.addAutomatedResponseFlag(ticket_id=response_list[i][1], credentials=login_credentials, printResponse=True)
+            try:
+                print('grabbing non-solved tickets')    # logging
+                ticket_list = notifier.getAllNotSolvedTickets(credentials=ZendeskAutomationSystem.login_credentials, printResponse=False)   # pull all tickets that are not Solved
+                response_list = notifier.compileEmailList(ticket_list=ticket_list)  # put together the email list
+                print('email_list contains', response_list) # logging
+                time.sleep(ZendeskAutomationSystem.update_frequency)   # wait some time 
 
-                print('merging original request from ticket', response_list[i][1], 'into ticket', make_ticket_response[1])
-                notifier.mergeTicketIntoTarget(response_list[i][1], target_ticket_id=make_ticket_response[1], credentials=login_credentials)
+                for i in range(0, len(response_list)):
+                    make_ticket_response = notifier.makeTicket(emailAddress=response_list[i][0],
+                                                            redentials=ZendeskAutomationSystem.login_credentials)
+                    
+                    if make_ticket_response == None:
+                        print('could not make response ticket -- add response failed tag')
+                        notifier.addResponseFailedFlag(ticket_id=response_list[i][1], 
+                                                    credentials=ZendeskAutomationSystem.login_credentials, printResponse=True)
+
+                        print('Notify IT team')
+                        # notifier.notifyITTeam(params here)
+                    else:
+                        print('successfully responded to', response_list[i][0])
+
+                        # add response_successful tag to the original request ticket
+                        notifier.addAutomatedResponseFlag(ticket_id=response_list[i][1], 
+                                                        credentials=ZendeskAutomationSystem.login_credentials, printResponse=True)
+
+                        # merge original request ticket into new ticket
+                        notifier.mergeTicketIntoTarget(response_list[i][1], target_ticket_id=make_ticket_response[1], 
+                                                    credentials=ZendeskAutomationSystem.login_credentials)
+            except KeyboardInterrupt:
+                print("System stopped by user - Ctrl + C")
+                exit()
 
 
-
-# testFunctions()
-
-while True:
-    main()
+ZendeskAutomationSystem.main()
