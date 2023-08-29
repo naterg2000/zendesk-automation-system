@@ -1,5 +1,8 @@
 # zendesk-automation-system
-<h1>Zendesk Automation System</h1>
+
+```pip install requests```
+```pip install gspread```
+```pip install pyqt5```
 
 <p>This is an automation system for the FYI team. The system looks at any unsolved tickets and checks the subject to see if they are requests to reset the user's Encryption Key and also whether that user has been replied to or not.
 If not, a Zendesk Ticket is automatically created in response to this request. The original request ticket is merged into the newly made response ticket.</p>
