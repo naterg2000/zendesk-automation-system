@@ -15,4 +15,5 @@ If not, a Zendesk Ticket is automatically created in response to this request. T
   <li>Debugging Mode: will refrain from making tickets and sending emails.</li>
   <li>Benzo Log Updater: automatically add Benzo Log reports to our Google Sheet for tracking.</li>
   <li>More stability/anti-crash functionality.</li>
+  <li>Installer bat/bash file to install libraries automatically</li>
 </ul>
