@@ -54,7 +54,7 @@ class MainWindow(QMainWindow):
         frequency_handling_layout.addWidget(self.update_frequency_value_label)
 
         # update frequency change text input
-        self.update_frequency_input = QtWidgets.QLineEdit("")
+        self.update_frequency_input = QtWidgets.QLineEdit()
         self.update_frequency_input.setStyleSheet("height: 30px;")
         # self.update_frequency_input.setGeometry()
         
@@ -71,7 +71,7 @@ class MainWindow(QMainWindow):
         self.status_label = QtWidgets.QLabel("Status:")
         self.status_label.setStyleSheet("color: #959597; \
                                        font-size: 12pt;")
-        self.status_description_label = QtWidgets.QLabel("")
+        self.status_description_label = QtWidgets.QLabel(zds.system_status)
         self.status_description_label.setStyleSheet("color: #959597; \
                                        font-size: 10pt;")
 
@@ -96,22 +96,24 @@ class MainWindow(QMainWindow):
 
 
     def submit_update_frequency_change_button_clicked(self):
-        freq_value = ""
-        try:
-            freq_value = self.update_frequency_input.text()
-        except Exception as e: 
-            print("\nProblelm at submit_update_frequency_button_clicked(): ", e)
 
-        
-        if freq_value == "": # if the text bar is empty, print a warning
+        # if the line edit value is not empty
+        if self.update_frequency_input.text() != "":
+            try:    # try to convert the text to an int
+                freq_value = int(self.update_frequency_input.text())
+            except Exception as e: 
+                print("\nProblelm at submit_update_frequency_button_clicked(): ", e)
+            finally:
+                zds.changeUpdateFrequency(new_frequency=freq_value)
+                self.update_frequency_value_label.setText(str(freq_value))
+        else:
             print("Please enter a value to change the update frequency to")
-        else:   # otherwise, update the label, reset the input bar text, and change the update frequency value
-            self.update_frequency_value_label.setText(freq_value)
-            self.update_frequency_input.setText("")
-            zds.update_frequency = int(freq_value)
-            print("Update fequency is now:", zds.update_frequency)
 
-the_other_process = subprocess.Popen(['python', 'runner_proto.py'])
+def runTicketHandler():
+    zds.main()
+
+thread = threading.Thread(target=runTicketHandler)
+thread.start()
 
 app = QApplication(sys.argv)
 window = MainWindow()
