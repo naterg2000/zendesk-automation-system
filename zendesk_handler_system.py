@@ -3,7 +3,7 @@ import notifier
 import time
 
 login_credentials = notifier.getLoginInfo() # store login info
-update_frequency = 5    # the time between each API request
+update_frequency = 60    # the time between each API request
 
 def main():
 

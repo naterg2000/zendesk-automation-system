@@ -1,5 +1,6 @@
 # for more information about the Ticket API,
 # visit https://developer.zendesk.com/api-reference/ticketing/tickets/tickets/
+# documentation: https://docs.google.com/spreadsheets/d/1bICGrBglo_UzkocTmtVSYxzLoqfPwKsd-ZwSGDQl3Kg/edit?usp=sharing
 # Zendesk API limit is 400 calls/minute
 
 import requests
@@ -100,13 +101,16 @@ def notifyITTeam(function_origin=None, problem_description=None, credentials=lis
     headers = { # set header(s) for HTTP request
         "Content-Type": "application/json",
     }
-    response = requests.request(    # make the POST request
-        "POST",
-        url=subdomain + "/api/v2/tickets/",
-        auth=(credentials[0], credentials[1]),
-        headers=headers,
-        json=payload
-    )
+    try:
+        response = requests.request(    # make the POST request
+            "POST",
+            url=subdomain + "/api/v2/tickets/",
+            auth=(credentials[0], credentials[1]),
+            headers=headers,
+            json=payload
+        )
+    except Exception:
+        print('Failed to submit POST')
     printHTTPResponse(response, "POST") # print the response of the POST request
 
     return response
@@ -123,8 +127,10 @@ def submitGET(endpoint="", credentials=list, printResponse=False):
     Returns: 
     response - the HTTP response from the GET request
     """
-
-    response = requests.get(endpoint, auth=(credentials[0], credentials[1]))    # make API call
+    try:
+        response = requests.get(endpoint, auth=(credentials[0], credentials[1]))    # make API call
+    except Exception:
+        print('Failed to submit GET')
     
     if printResponse:   # if printResponse is True, print 
         printHTTPResponse(response, "GET")
@@ -161,15 +167,18 @@ def submitPOST(endpoint="", new_ticket_info=dict, credentials=list, printRespons
     # if after the third time it doesn't work, make a ticket for the IT team to respond to 
     post_attempts = 0
     while post_attempts < 3:
-
-        # make the POST request
-        response = requests.request(
-            "POST",
-            endpoint,
-            auth=(credentials[0], credentials[1]),
-            headers=headers,
-            json=payload
-        )
+        
+        try:
+            # make the POST request
+            response = requests.request(
+                "POST",
+                endpoint,
+                auth=(credentials[0], credentials[1]),
+                headers=headers,
+                json=payload
+            )
+        except Exception:
+            print('Failed to submit POST -- submitPOST()')
 
         post_attempts = post_attempts + 1   # incremement post_attempts counter
         time.sleep(3)   # wait 3 second to prevent too many API calls
@@ -224,14 +233,17 @@ def addAutomatedResponseFlag(ticket_id='', credentials=list, printResponse=False
     put_attempts = 0
     while put_attempts < 3:
 
-        # make post request with payload
-        response = requests.request(
-            "PUT",
-            endpoint,
-            auth=(credentials[0], credentials[1]),
-            headers=headers,
-            json=payload
-        )
+        try:
+            # make post request with payload
+            response = requests.request(
+                "PUT",
+                endpoint,
+                auth=(credentials[0], credentials[1]),
+                headers=headers,
+                json=payload
+            )
+        except Exception:
+            print('Failed to PUT -- addAutomatedResponseTag()')
 
         put_attempts = put_attempts + 1 # incremement post_attempts counter
         time.sleep(3)   # wait 3 seconds to prevent overloading the API
@@ -288,15 +300,18 @@ def addResponseFailedFlag(ticket_id='', credentials=list, printResponse=False):
     # if after the third time it doesn't work, make a ticket for the IT team to respond to 
     put_attempts = 0
     while put_attempts < 3:
-
-        # make post request with payload
-        response = requests.request(
-            "PUT",
-            endpoint,
-            auth=(credentials[0], credentials[1]),
-            headers=headers,
-            json=payload
-        )
+        
+        try:
+            # make post request with payload
+            response = requests.request(
+                "PUT",
+                endpoint,
+                auth=(credentials[0], credentials[1]),
+                headers=headers,
+                json=payload
+            )
+        except Exception:
+            print('Failed to submit PUT -- addResponseFailedTag()')
 
         put_attempts = put_attempts + 1 # incremement post_attempts counter
         time.sleep(3)   # wait 3 seconds to prevent overloading the API
@@ -459,7 +474,11 @@ def getAllNotSolvedTickets(credentials=list, printResponse=False):
     
     # submit GET request for all not solved tickets
     response = submitGET(endpoint=endpoint, credentials=credentials, printResponse=printResponse)
-    data = response.json()  # store the response as a JSON object
+    data = {}
+    try:
+        data = response.json()  # store the response as a JSON object
+    except Exception:
+        return []
     ticket_data = data[list(data.keys())[0]]    # break up the JSON into a list
 
     return ticket_data
