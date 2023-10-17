@@ -2,3 +2,7 @@ fyi-zendesk-fetcher-f655e139dc89.json
 credentials.json
 login_info.txt
 gmail_password.txt
+sms_sender.py
+system_ui.py
+ticket_fetcher_runner.py
+zendeskTicketFetcher.py

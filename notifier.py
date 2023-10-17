@@ -1,19 +1,20 @@
+# by Nathan for FYI :D
 # for more information about the Ticket API,
 # visit https://developer.zendesk.com/api-reference/ticketing/tickets/tickets/
 # documentation: https://docs.google.com/spreadsheets/d/1bICGrBglo_UzkocTmtVSYxzLoqfPwKsd-ZwSGDQl3Kg/edit?usp=sharing
-# Zendesk API limit is 400 calls/minute
+# Zendesk API limit is 400 calls/minute - I think
 
 import requests
 import re
 import json
 import time
 
-debug_mode = False  # debug flag to enable/disable printing, Don't Notify subject for new tickets, etc...
+debug_mode = False  # NOT IMPLEMETNED YET -- debug flag to enable/disable printing, Don't Notify subject for new tickets, etc...
 subdomain = "https://fyihelp.zendesk.com"   # zendesk FYI subdomain
 search_subject = "Request reset encryption key" # search for this subject when adding tickets to the email list
 dont_resond_tag = "response_successful" # use this phrase to look for the tag indicated a response email has already been sent
 response_failed_tag = "response_failed" # use this phrase to indicate a request ticket that was not able to be automatically responded to
-email_blacklist = ['']  # don't email these users
+email_blacklist = ['']  # don't email these users -- add emails if needed
 it_team_emails = ['nadia.underwood@fyi.fyi', 'fyiintern001@gmail.com']  # list of IT account emails
 
 
@@ -33,9 +34,9 @@ def getLoginInfo():
         #               credentials=["fyiintern001@gmail.com", "Chocolate2020"])
 
         exit()  # stop the program since nothing will work if login info is different
-    else:   # if the try operation completed
+    else:   
         credentials = zd_login.readline()   # read a line from the file
-        zd_login.close()    # close the file
+        zd_login.close() 
         return credentials.split(',')   # split with commas and return the separated list
 
 
@@ -55,16 +56,24 @@ def printHTTPResponse(response, command):
     print('Response: ', response.status_code)
     if response.status_code >= 200 and response.status_code < 300:
         print(command, ": posted with no problem")
+
     elif response.status_code >= 300 and response.status_code < 400:
         print(command, ": has multiple response choices, check logic")
-    elif response.status_code >= 400 and response.status_code < 500:
+
+    elif response.status_code >= 400 and response.status_code < 500: 
         print(command, ": error with request, check syntax")
-    elif response.status_code >= 500 and response.status_code < 600:
+
+    elif response.status_code >= 500 and response.status_code < 600: 
         print(command, ": there was an unexpected error with the server")
+
 
     return response
 
+"""
 
+This is not used yet
+
+"""
 def notifyITTeam(function_origin=None, problem_description=None, credentials=list):
     """ Notifies the IT team that something did not work properly
     
@@ -88,7 +97,7 @@ def notifyITTeam(function_origin=None, problem_description=None, credentials=lis
                 },
                 "priority": "urgent",   # priority of the ticket is urgent since we want to get users back up and running quickly
 
-                # set this to Don't Notify so Nadia and Intern account don't get an email
+                # set this to "Don't Notify" so Nadia and Intern account don't get an email
                 # standard subject should be "Encryption Key Reset Follow-up"
                 "subject": "Problem with Zendesk Handler System",
 
@@ -97,10 +106,12 @@ def notifyITTeam(function_origin=None, problem_description=None, credentials=lis
                 "tags": ["automated_message"]   
             }
     }
+
     payload = json.loads(json.dumps(ticket_data))   # convert ticket data dict to JSON payload
     headers = { # set header(s) for HTTP request
         "Content-Type": "application/json",
     }
+
     try:
         response = requests.request(    # make the POST request
             "POST",
@@ -111,6 +122,7 @@ def notifyITTeam(function_origin=None, problem_description=None, credentials=lis
         )
     except Exception:
         print('Failed to submit POST')
+
     printHTTPResponse(response, "POST") # print the response of the POST request
 
     return response
@@ -129,9 +141,11 @@ def submitGET(endpoint="", credentials=list, printResponse=False):
     """
     try:
         response = requests.get(endpoint, auth=(credentials[0], credentials[1]))    # make API call
+
     except Exception:
         print('Failed to submit GET')
     
+
     if printResponse:   # if printResponse is True, print 
         printHTTPResponse(response, "GET")
 
@@ -163,36 +177,18 @@ def submitPOST(endpoint="", new_ticket_info=dict, credentials=list, printRespons
     }
 
     # make post request with payload
-    # if the code is an error, try again 3 times
-    # if after the third time it doesn't work, make a ticket for the IT team to respond to 
-    post_attempts = 0
-    while post_attempts < 3:
-        
-        try:
-            # make the POST request
-            response = requests.request(
-                "POST",
-                endpoint,
-                auth=(credentials[0], credentials[1]),
-                headers=headers,
-                json=payload
-            )
-        except Exception:
-            print('Failed to submit POST -- submitPOST()')
+    try:
+        # make the POST request
+        response = requests.request(
+            "POST",
+            endpoint,
+            auth=(credentials[0], credentials[1]),
+            headers=headers,
+            json=payload
+        )
+    except Exception:
+        print('Failed to submit POST -- submitPOST()')
 
-        post_attempts = post_attempts + 1   # incremement post_attempts counter
-        time.sleep(3)   # wait 3 second to prevent too many API calls
-
-        # if 3 attempts have been reached
-        # if post_attempts == 2:
-            # notifyITTeam(function_origin="submitPOST()", problem_description="could not POST ticket:\n", credentials=credentials)
-
-            # put a flag to ignore the ticket in question
-            # return None
-        
-        # if the code is less than 300, meaning it was successful, break out of the loop
-        if response.status_code < 300:
-            break
 
     # if printResponse is True, print 
     if printResponse:
@@ -228,38 +224,18 @@ def addAutomatedResponseFlag(ticket_id='', credentials=list, printResponse=False
         "Content-Type": "application/json",
     }
 
-    # if the code is an error, try again 3 times
-    # if after the third time it doesn't work, make a ticket for the IT team to respond to 
-    put_attempts = 0
-    while put_attempts < 3:
+    try:
+        # make post request with payload
+        response = requests.request(
+            "PUT",
+            endpoint,
+            auth=(credentials[0], credentials[1]),
+            headers=headers,
+            json=payload
+        )
+    except Exception:
+        print('Failed to PUT -- addAutomatedResponseTag()')
 
-        try:
-            # make post request with payload
-            response = requests.request(
-                "PUT",
-                endpoint,
-                auth=(credentials[0], credentials[1]),
-                headers=headers,
-                json=payload
-            )
-        except Exception:
-            print('Failed to PUT -- addAutomatedResponseTag()')
-
-        put_attempts = put_attempts + 1 # incremement post_attempts counter
-        time.sleep(3)   # wait 3 seconds to prevent overloading the API
-
-        # if 3 attempts have been reached
-        if put_attempts == 2:
-            print('Notify IT team to check what\'s up with this email and submit a manual ticket')
-            # notifyITTeam(function_origin="addResponseFailedTag()", 
-            #               problem_description="Could not upload automated_response_flag to ticket " + ticket_id, 
-            #             credentials=credentials)
-            
-            addResponseFailedFlag(ticket_id=ticket_id, credentials=credentials) # add the response failed tag to the request ticket
-
-        # if the code is less than 300, meaning it was successful, break out of the loop
-        if response.status_code < 300:
-            break
 
     # if printResponse is True, print 
     if printResponse:
@@ -286,7 +262,7 @@ def addResponseFailedFlag(ticket_id='', credentials=list, printResponse=False):
     if ticket_id != "":
         endpoint = subdomain + "/api/v2/tickets/" + str(ticket_id)
     else:
-        print("please enter ticket ID to add automated response flag to")
+        print("please enter ticket ID to add failed response flag to")
         return None
     
     
@@ -295,37 +271,19 @@ def addResponseFailedFlag(ticket_id='', credentials=list, printResponse=False):
     headers = { # set header(s) for HTTP request
         "Content-Type": "application/json",
     }
+  
+    try:
+        # make post request with payload
+        response = requests.request(
+            "PUT",
+            endpoint,
+            auth=(credentials[0], credentials[1]),
+            headers=headers,
+            json=payload
+        )
+    except Exception:
+        print('Failed to submit PUT -- addResponseFailedTag()')
 
-    # if the code is an error, try again 3 times
-    # if after the third time it doesn't work, make a ticket for the IT team to respond to 
-    put_attempts = 0
-    while put_attempts < 3:
-        
-        try:
-            # make post request with payload
-            response = requests.request(
-                "PUT",
-                endpoint,
-                auth=(credentials[0], credentials[1]),
-                headers=headers,
-                json=payload
-            )
-        except Exception:
-            print('Failed to submit PUT -- addResponseFailedTag()')
-
-        put_attempts = put_attempts + 1 # incremement post_attempts counter
-        time.sleep(3)   # wait 3 seconds to prevent overloading the API
-
-        # if 3 attempts have been reached
-        if put_attempts == 2:
-            print('Notify IT team to check what\'s up with this email and submit a manual ticket')
-            # notifyITTeam(function_origin="addResponseFailedTag()", 
-            #              problem_description="Could not upload response_failed_tag to ticket " + ticket_id, 
-            #            credentials=credentials)
-            
-        # if the code is less than 300, meaning it was successful, break out of loop
-        if response.status_code < 300:
-            break
 
     # if printResponse is True, print 
     if printResponse:
@@ -388,6 +346,7 @@ def makeTicket(emailAddress="", credentials=list):
             print('email address is empty in makeTicket')
         elif len(credentials) != 2:
             print('check credentials passed to makeTicket()')
+
         return None
 
 
@@ -404,7 +363,7 @@ def extractSenderEmail(ticket_description):
     email_expression = "Email: [A-Za-z0-9@._\-!#$%&'*+=?^_`{|}~]+.[a-z]+"   # regular expression to search for "Email: <email>"
 
     # search the ticket description for the expression
-    # remove whitespace between Email: and <requester email>
+    # remove whitespace between Email: and <email>
     emailInfo = re.findall(email_expression, ticket_description)[0].replace(' ', '')
 
     # remove spaces/whitespace
@@ -436,7 +395,7 @@ def mergeTicketIntoTarget(original_request_ticket_id='', target_ticket_id='', cr
 
     # check that the merge info response was correct
     if original_ticket_info_response.status_code > 299:
-        print('mergeTicketIntoTarget(): grabbing old ticket info responded > 299', original_ticket_info_response.status_code)    # debugging
+        print('mergeTicketIntoTarget(): grabbing old ticket info responded with:', original_ticket_info_response.status_code)    # debugging
         return None
 
     original_ticket_info_json = original_ticket_info_response.json()    # split response object into JSON
@@ -447,7 +406,7 @@ def mergeTicketIntoTarget(original_request_ticket_id='', target_ticket_id='', cr
         "ids": [ original_request_ticket_id ],
         "target_comment": "Request info from Ticket " + str(original_ticket_info['id']) + "\n\n" + original_ticket_info['description'],
     }
-
+    
     merge_response = submitPOST(endpoint=endpoint, new_ticket_info=merge_body, credentials=credentials, printResponse=True) # execute ticket merge and store the merge response
 
     # check that the response from the merge was witihin the 200 range
@@ -470,7 +429,7 @@ def getAllNotSolvedTickets(credentials=list, printResponse=False):
     """
 
     # endpoint = subdomain + '/api/v2/search.json?query=type:ticket+status:pending+status:new+status:open'   # solved is the "largest" value of status, so anything less than solved is not-solved
-    endpoint = subdomain + '/api/v2/search.json?query=type:ticket+status:open+status:pending+status:new'    
+    endpoint = subdomain + '/api/v2/search.json?query=type:ticket+status:new'    
     
     # submit GET request for all not solved tickets
     response = submitGET(endpoint=endpoint, credentials=credentials, printResponse=printResponse)
